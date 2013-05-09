@@ -1,0 +1,123 @@
+#!/bin/bash
+#
+# logstash-init script
+#  This shell script takes care of starting and stopping logstash
+#
+#
+### BEGIN INIT INFO
+# Default-Start:
+# Default-Stop:
+# Short-Description: start and stop logstash
+### END INIT INFO
+
+## Source function library.
+#. /etc/rc.d/init.d/functions
+# Put your logstash install location here.
+export LOGSTASH_HOME=/opt/logstash
+# Put your java install location here.
+export JAVA_HOME=/usr/java/latest
+# Put your logstash config for either shipper or indexer here.
+export CONFIG=shipper.conf
+# Need to export home dir for logstash to do work in. Point to a location you want for your install.
+export HOME=/opt/logstash
+
+#export JAVA_OPTS="-Dfile.encoding=UTF-8 \
+#  -Dcatalina.logbase=/var/log/tomcat7 \
+#  -Dnet.sf.ehcache.skipUpdateCheck=true \
+#  -XX:+UseConcMarkSweepGC \
+#  -XX:+CMSClassUnloadingEnabled \
+#  -XX:+UseParNewGC \
+#  -XX:MaxPermSize=512m \
+#  -Xms512m -Xmx1024m \
+#  -Xdebug -Xrunjdwp:transport=dt_socket,address=8000,server=y,suspend=n"
+
+export PATH=$JAVA_HOME/bin:$PATH
+SHUTDOWN_WAIT=0
+
+# Put your logstash version in here.
+export LOGSTASH_NAME=logstash-1.1.12-flatjar.jar
+
+# This is how we are finding the logstash pid.
+logstash_pid() {
+  echo `ps aux | grep $LOGSTASH_NAME | grep -v grep | awk '{ print $2 }'`
+}
+
+# This is how we start the service.
+start() {
+  pid=$(logstash_pid)
+  if [ -n "$pid" ] 
+  then
+    echo "Logstash is already running (pid: $pid)"
+  else
+    # Start logstash
+    echo "Starting logstash"
+    # ulimit -n 100000
+    #umask 007
+    cd $LOGSTASH_HOME
+    java -jar $LOGSTASH_HOME/$LOGSTASH_NAME agent -f $LOGSTASH_HOME/$CONFIG         2> /dev/null &
+  fi
+  return 0
+}
+
+# This is how we stop the service.
+stop() {
+  pid=$(logstash_pid)
+  if [ -n "$pid" ]
+  then
+    echo "Stopping Logstash"
+
+#    let kwait=$SHUTDOWN_WAIT
+#    count=0;
+#    until [ `ps -p $pid | grep -c $pid` = '0' ] || [ $count -gt $kwait ]
+#    do
+#      echo -n -e "\nwaiting for processes to exit";
+#      sleep 1
+#      let count=$count+1;
+#    done
+
+#    if [ $count -gt $kwait ]; then
+#      echo -n -e "\nkilling processes which didn't stop after $SHUTDOWN_WAIT seconds"
+      kill -9 $pid  2> /dev/null &
+      return 0
+#    fi
+  else
+    echo "Logstash is not running"
+  fi
+ 
+  return 0
+}
+
+restart(){
+  stop
+  sleep 10
+  start
+}
+
+case $1 in
+start)
+  start
+;; 
+stop)   
+  stop
+;; 
+restart)
+  stop
+  sleep 10
+  start
+;;
+status)
+  pid=$(logstash_pid)
+  if [ -n "$pid" ]
+  then
+    echo "Logstash is running with pid: $pid"
+  else
+    echo "Logstash is not running"
+  fi
+;; 
+*)
+echo $"Usage: $0 {start|stop|restart|status}"
+exit 1
+esac    
+exit 0
+
+
