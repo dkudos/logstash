@@ -54,7 +54,7 @@ start() {
     # ulimit -n 100000
     #umask 007
     cd $LOGSTASH_HOME
-    java -jar $LOGSTASH_HOME/$LOGSTASH_NAME agent -f $LOGSTASH_HOME/$CONFIG         2> /dev/null &
+    java -jar $LOGSTASH_HOME/$LOGSTASH_NAME agent -f $LOGSTASH_HOME/$CONFIG   2> /dev/null &
   fi
   return 0
 }
